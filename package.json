@@ -3,13 +3,16 @@
   "version": "0.0.5",
   "type": "module",
   "files": [
-    "dist/*"
+    "galleries-for-portfolio.js",
+    "galleries-for-portfolio.cjs",
+    "index.d.ts"
   ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "example": "npx tsx example/example.ts"
+    "example": "npx tsx example/example.ts",
+    "prepare": "npm run build && cp dist/* ."
   },
   "devDependencies": {
     "@types/node": "^22.8.4",
