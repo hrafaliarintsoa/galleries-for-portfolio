@@ -1,11 +1,9 @@
 {
   "name": "@hrafaliarintsoa/galleries-for-portfolio",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "files": [
-    "dist/galleries-for-portfolio.cjs",
-    "dist/galleries-for-portfolio.js",
-    "dist/index.d.ts"
+    "dist/*"
   ],
   "scripts": {
     "dev": "vite",
