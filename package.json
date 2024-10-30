@@ -1,6 +1,6 @@
 {
   "name": "@hrafaliarintsoa/galleries-for-portfolio",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "files": [
     "galleries-for-portfolio.js",
