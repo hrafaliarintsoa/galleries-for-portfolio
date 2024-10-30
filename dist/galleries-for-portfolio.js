@@ -7,29 +7,29 @@ async function G(e) {
   try {
     await Promise.all(
       e.galleries.map(async (a) => {
-        const i = s.join(e.imagesDir, a), o = await h.readdir(i), n = s.join(i + "");
-        await C(o, a, e);
+        const i = s.join(e.imagesDir, a), r = await h.readdir(i), n = s.join(i + "");
+        await C(r, a, e);
         const t = await h.readdir(i);
         await S(n), await I(n), await b(s.join(n, "/optimized")), await b(s.join(n, "/thumbnails")), await Promise.all(
           t.map(async (l) => {
-            if (d(l)) {
+            if (w(l)) {
               const m = s.join(i, l), g = z(l, e), f = s.join(
                 i + "/optimized",
-                w(g)
+                d(g)
               ), j = s.join(
                 i + "/thumbnails",
-                w(g)
+                d(g)
               );
-              await P(m, f, e), await v(m, j, e);
+              await $(m, f, e), await v(m, j, e);
             }
           })
         );
-        const r = await F(
+        const o = await F(
           z(t, e),
           i,
           a,
           e
-        ), c = JSON.stringify(r, null, 2);
+        ), c = JSON.stringify(o, null, 2);
         await h.writeFile(s.join(i, "images.json"), c);
       })
     ), await T(e);
@@ -39,52 +39,52 @@ async function G(e) {
 }
 function z(e, a) {
   if (Array.isArray(e) && e.length)
-    return e.map((o) => {
-      if (!d(o))
-        return o;
-      let n = o;
+    return e.map((r) => {
+      if (!w(r))
+        return r;
+      let n = r;
       return a.renameOptions.charsToRename.forEach((t) => {
         n = n.replace(t, a.renameOptions.renameBy);
       }), n;
     });
-  if (!d(e))
+  if (!w(e))
     return e;
   let i = e;
-  return a.renameOptions.charsToRename.forEach((o) => {
-    i = i.replace(o, a.renameOptions.renameBy);
+  return a.renameOptions.charsToRename.forEach((r) => {
+    i = i.replace(r, a.renameOptions.renameBy);
   }), i;
 }
-function d(e) {
+function w(e) {
   const a = s.extname(e);
   return a === ".jpg" || a === ".jpeg" || a === ".png";
 }
-function w(e) {
+function d(e) {
   return e.replace(s.extname(e), ".webp");
 }
 async function p(e) {
   return console.log(`Getting image size for ${e}`), new Promise((a, i) => {
-    D(e, (o, n) => {
-      o ? i(o) : a(n);
+    D(e, (r, n) => {
+      r ? i(r) : a(n);
     });
   });
 }
-async function F(e, a, i, o) {
+async function F(e, a, i, r) {
   console.log(`Creating image objects for ${i}`);
   const n = [];
   for (const t of e)
-    if (d(t)) {
-      const r = s.join(a, "thumbnails", t), c = s.join(a, "optimized", t), l = O({}, i), m = await p(c.replace(".jpg", ".webp")), g = await p(r.replace(".jpg", ".webp"));
+    if (w(t)) {
+      const o = s.join(a, "thumbnails", t), c = s.join(a, "optimized", t), l = O({}, i), m = await p(c.replace(".jpg", ".webp")), g = await p(o.replace(".jpg", ".webp"));
       let f = !1;
       g.width && g.height && (f = g.height > g.width);
-      const j = i.includes("home-") ? $(t, i, o) : i;
+      const j = i.includes("home-") ? P(t, i, r) : i;
       n.push({
         name: t.replace(".jpg", ""),
-        path: s.join(o.imagesAssetsDir, i, "optimized", w(t)),
+        path: s.join(r.imagesAssetsDir, i, "optimized", d(t)),
         thumbnailPath: s.join(
-          o.imagesAssetsDir,
+          r.imagesAssetsDir,
           i,
           "thumbnails",
-          w(t)
+          d(t)
         ),
         thumbnailDimensions: g,
         optimizedDimensions: m,
@@ -97,7 +97,7 @@ async function F(e, a, i, o) {
     }
   return n;
 }
-function $(e, a, i) {
+function P(e, a, i) {
   const n = i.galleries.map(
     (t) => s.join(i.imagesDir, t, "optimized", e.replace(".jpg", ".webp"))
   ).filter((t) => !t.includes(a)).find((t) => y(t));
@@ -113,12 +113,12 @@ function O(e, a) {
   let i = `Hajaniaina Rafaliarintsoa ${a}`;
   return e.DigitalCreationDate && (i += ` ${e.DigitalCreationDate}`), i;
 }
-async function P(e, a, i) {
+async function $(e, a, i) {
   console.log(`Reducing image size of ${e}`), console.log(`Destination: ${a}`);
-  const o = { gravity: "southeast" }, { width: n, height: t } = await p(e);
-  let r = !1;
-  n && t && (r = t > n);
-  const [c, l] = r ? [i.optimizedSize?.height, i.optimizedSize?.width] : [i.optimizedSize?.width, i.optimizedSize?.height];
+  const r = { gravity: "southeast" }, { width: n, height: t } = await p(e);
+  let o = !1;
+  n && t && (o = t > n);
+  const [c, l] = o ? [i.optimizedSize?.height, i.optimizedSize?.width] : [i.optimizedSize?.width, i.optimizedSize?.height];
   try {
     const m = u(e).withMetadata({
       exif: {
@@ -130,10 +130,10 @@ async function P(e, a, i) {
       fit: u.fit.cover,
       kernel: u.kernel.lanczos3
     });
-    a.includes("home-") || m.composite([
+    !a.includes("home-") && i.watermarkPath && m.composite([
       {
         input: i.watermarkPath,
-        ...o
+        ...r
       }
     ]), await m.toFile(a);
   } catch (m) {
@@ -145,8 +145,8 @@ async function b(e) {
   const a = await h.readdir(e);
   await Promise.all(
     a.map(async (i) => {
-      const o = s.join(e, i);
-      await h.unlink(o);
+      const r = s.join(e, i);
+      await h.unlink(r);
     })
   );
 }
@@ -170,11 +170,11 @@ async function I(e) {
 }
 async function v(e, a, i) {
   console.log(`Creating thumbnail for ${e}`);
-  const { width: o, height: n } = await p(e);
+  const { width: r, height: n } = await p(e);
   let t = !1;
-  o && n && (t = n > o);
-  const [r, c] = t ? [null, i.thumbnailSize?.height] : [i.thumbnailSize?.width, null];
-  return u(e).resize(r, c, {
+  r && n && (t = n > r);
+  const [o, c] = t ? [null, i.thumbnailSize?.height] : [i.thumbnailSize?.width, null];
+  return u(e).resize(o, c, {
     kernel: u.kernel.lanczos3,
     fit: u.fit.cover
   }).webp({
@@ -183,32 +183,32 @@ async function v(e, a, i) {
 }
 async function C(e, a, i) {
   console.log(`Renaming files in ${a}`);
-  const o = e.map(async (n) => {
+  const r = e.map(async (n) => {
     const t = s.join(i.imagesDir, a, n);
-    let r = n;
-    r = r.replace(/-\d+(?=\.[^.]+$)/, ""), i.cleanChars?.forEach((l) => {
-      typeof l == "string" ? r = r.replace(l, "") : r = r.replace(l.char, l.replaceBy);
+    let o = n;
+    i.cleanChars?.forEach((l) => {
+      typeof l == "string" ? o = o.replace(l, "") : o = o.replace(l.char, l.replaceBy);
     });
-    let c = s.join(i.imagesDir, a, r);
-    r !== n && y(c) ? (r = r.replace(".jpg", "2.jpg"), c = s.join(i.imagesDir, a, r), await h.rename(t, c)) : await h.rename(t, c);
+    let c = s.join(i.imagesDir, a, o);
+    o !== n && y(c) ? (o = o.replace(".jpg", "2.jpg"), c = s.join(i.imagesDir, a, o), await h.rename(t, c)) : await h.rename(t, c);
   });
-  return Promise.all(o);
+  return Promise.all(r);
 }
 async function T(e) {
   await Promise.all(
     e.parentGalleries.map(async (a) => {
-      const o = await e.galleries.filter(
+      const r = await e.galleries.filter(
         (t) => t.includes(a)
-      ).reduce(async (t, r) => {
-        const c = await t, l = s.join(e.imagesDir, r), m = JSON.parse(
+      ).reduce(async (t, o) => {
+        const c = await t, l = s.join(e.imagesDir, o), m = JSON.parse(
           await h.readFile(s.join(l, "images.json"), "utf8")
         );
-        return e.privateGalleries.includes(r) && m.forEach((g) => {
+        return e.privateGalleries.includes(o) && m.forEach((g) => {
           delete g.thumbnailPath, delete g.path;
-        }), { ...c, [r]: m };
-      }, Promise.resolve({})), n = Object.keys(o).reduce((t, r) => {
-        const c = o[r].find((l) => !l.portrait);
-        return { ...t, [r]: c };
+        }), { ...c, [o]: m };
+      }, Promise.resolve({})), n = Object.keys(r).reduce((t, o) => {
+        const c = r[o].find((l) => !l.portrait);
+        return { ...t, [o]: c };
       }, {});
       await h.writeFile(
         s.join(e.imagesDir, a, "cover-images.json"),

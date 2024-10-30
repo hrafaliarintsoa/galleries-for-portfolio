@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+dist
 node_modules
 *.local
 
@@ -25,3 +26,7 @@ vite.config.js.timestamp*
 example/images/sample-gallery/optimized
 example/images/sample-gallery/thumbnails
 example/images/sample-gallery/images.json
+
+galleries-for-portfolio.js
+galleries-for-portfolio.cjs
+index.d.ts
