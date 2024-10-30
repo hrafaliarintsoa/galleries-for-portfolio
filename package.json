@@ -1,0 +1,23 @@
+{
+  "name": "@hrafaliarintsoa/galleries-for-portfolio",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "example": "npx tsx example/example.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.4",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.10"
+  },
+  "dependencies": {
+    "image-size": "^1.1.1",
+    "path": "^0.12.7",
+    "sharp": "^0.33.5",
+    "vite-plugin-dts": "^4.3.0"
+  }
+}
