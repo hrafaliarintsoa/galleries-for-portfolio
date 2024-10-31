@@ -24,7 +24,7 @@ const galleriesToProcess = modifiedGalleries.length > 0 ? modifiedGalleries : ga
 
 createGalleries({
   galleries: galleriesToProcess,
-  imagesDir: 'example/images',
+  imagesDir: 'images',
   imagesAssetsDir: 'images',
   parentGalleries: [],
   privateGalleries: [],
