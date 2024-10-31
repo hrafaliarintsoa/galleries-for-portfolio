@@ -1,10 +1,10 @@
 {
   "name": "@hrafaliarintsoa/galleries-for-portfolio",
-  "version": "0.0.8",
+  "version": "0.0.10",
   "type": "module",
   "files": [
-    "galleries-for-portfolio.js",
-    "galleries-for-portfolio.cjs",
+    "index.es.js",
+    "index.cjs.js",
     "index.d.ts"
   ],
   "scripts": {
