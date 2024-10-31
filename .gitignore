@@ -27,6 +27,6 @@ example/images/sample-gallery/optimized
 example/images/sample-gallery/thumbnails
 example/images/sample-gallery/images.json
 
-galleries-for-portfolio.js
-galleries-for-portfolio.cjs
+index.es.js
+index.cjs.js
 index.d.ts
