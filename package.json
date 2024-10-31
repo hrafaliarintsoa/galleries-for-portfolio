@@ -12,7 +12,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "example": "npx tsx example/example.ts",
-    "prepare": "npm run build && cpx dist/* ."
+    "prepare": "npm run build && cp dist/* ."
   },
   "devDependencies": {
     "@types/node": "^22.8.4",
