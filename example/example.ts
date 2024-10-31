@@ -33,4 +33,5 @@ createGalleries({
   },
   cleanChars: [],
   copyright: '2024',
+  noWatermark: ['with-sub-folder'],
 });

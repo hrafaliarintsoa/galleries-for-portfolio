@@ -23,6 +23,8 @@ export interface Options {
   cleanChars?: (string | { char: string; replaceBy: string })[];
   copyright?: string;
   foldersConfig: FolderConfig[];
+  noWatermark?: string[];
+  needReferenceId?: string[];
 }
 
 export type ImagesFolder<T extends FolderConfig> = {
@@ -125,7 +127,7 @@ async function createImageFile(file: string, dest: string, config: { dimensions:
         kernel: sharp.kernel.lanczos3,
       });
 
-    if (config.watermarkPath) {
+    if (config.watermarkPath && options.noWatermark?.find((n) => !dest.includes(n))) {
       sharpInstance.composite([
         {
           input: config.watermarkPath,
@@ -235,9 +237,9 @@ async function createImageObjects(files: any, dir: string, galleryId: string, op
       }
 
       const refGalleryId = (
-        !galleryId.includes('home-')
-          ? galleryId
-          : getGalleryIdFromFileName(file, galleryId, options)
+        options.needReferenceId?.includes(galleryId)
+          ? getGalleryIdFromFileName(file, galleryId, options)
+          : galleryId
       ) as string;
 
       const imageObject: ImageObject = {
