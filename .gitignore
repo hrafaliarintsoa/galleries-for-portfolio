@@ -27,6 +27,5 @@ example/images/sample-gallery/optimized
 example/images/sample-gallery/thumbnails
 example/images/sample-gallery/images.json
 
-index.es.js
-index.cjs.js
+index.js
 index.d.ts

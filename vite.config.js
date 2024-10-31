@@ -7,8 +7,8 @@ export default defineConfig({
     lib: {
       entry: './src/index.ts',
       name: '@hrafaliarintsoa/galleries-for-portfolio',
-      formats: ['es', 'cjs'], // pure ESM package
-      fileName: (format) => `index.${format}.js`,
+      formats: ['es'], // pure ESM package
+      fileName: (format) => `index.js`,
     },
     rollupOptions: {
       external: [

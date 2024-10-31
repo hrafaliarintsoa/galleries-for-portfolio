@@ -1,10 +1,9 @@
 {
   "name": "@hrafaliarintsoa/galleries-for-portfolio",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "type": "module",
   "files": [
-    "index.es.js",
-    "index.cjs.js",
+    "index.js",
     "index.d.ts"
   ],
   "scripts": {
@@ -25,5 +24,10 @@
     "path": "^0.12.7",
     "sharp": "^0.33.5",
     "vite-plugin-dts": "^4.3.0"
+  },
+  "peerDependencies": {
+    "image-size": "^1.1.1",
+    "path": "^0.12.7",
+    "sharp": "^0.33.5"
   }
 }
