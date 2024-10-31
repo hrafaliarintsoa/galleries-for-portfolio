@@ -6,7 +6,9 @@ export default defineConfig({
   build: {
     lib: {
       entry: './src/index.ts',
+      name: '@hrafaliarintsoa/galleries-for-portfolio',
       formats: ['es', 'cjs'], // pure ESM package
+      fileName: (format) => `index.${format}.js`,
     },
     rollupOptions: {
       external: [
