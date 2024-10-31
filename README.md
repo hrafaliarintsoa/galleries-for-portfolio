@@ -67,7 +67,7 @@ images
      ├── image-2.jpg
      ├── image-3.jpg
      └── ...
- └── images.JSON
+     └── images.JSON
 ````
 
 ### Example of images.JSON
@@ -138,6 +138,10 @@ interface Options {
   copyright?: string;
 }
 ```
+
+### Remains to be done
+
+- [ ] cjs support
 
 ## Real-world example
 
