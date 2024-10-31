@@ -26,6 +26,10 @@ vite.config.js.timestamp*
 example/images/sample-gallery/optimized
 example/images/sample-gallery/thumbnails
 example/images/sample-gallery/images.json
+example/images/with-sub-folder/sub-gallery/optimized
+example/images/with-sub-folder/sub-gallery/thumbnails
+example/images/with-sub-folder/sub-gallery/images.json
+example/images/with-sub-folder/cover-images.json
 
 index.js
 index.d.ts

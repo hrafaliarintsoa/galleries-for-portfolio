@@ -24,13 +24,20 @@ const galleriesToProcess = modifiedGalleries.length > 0 ? modifiedGalleries : ga
 
 createGalleries({
   galleries: galleriesToProcess,
-  imagesDir: 'images',
+  imagesDir: 'example/images',
   imagesAssetsDir: 'images',
-  parentGalleries: [],
+  parentGalleries: ['with-sub-folder'],
   privateGalleries: [],
-  watermarkPath: '',
-  thumbnailSize: { width: 675, height: 450 },
-  optimizedSize: { width: 1500, height: 1000 },
+  foldersConfig: [
+    {
+      name: 'optimized',
+      dimensions: { width: 1500, height: 1000 },
+    },
+    {
+      name: 'thumbnails',
+      dimensions: { width: 675, height: 450 },
+    },
+  ],
   renameFiles: true,
   renameOptions: {
     charsToRename: ['image'],
@@ -75,43 +82,57 @@ images
 [
   {
     "name": "PHOTO-1",
-    "path": "images/sample-gallery/optimized/PHOTO-1.webp",
-    "thumbnailPath": "images/sample-gallery/thumbnails/PHOTO-1.webp",
-    "thumbnailDimensions": {
-      "height": 439,
-      "width": 675,
-      "type": "webp"
-    },
-    "optimizedDimensions": {
-      "height": 1000,
-      "width": 1500,
-      "type": "webp"
-    },
+    "path": "",
     "portrait": false,
     "galleryId": "sample-gallery",
+    "parentId": "sample-gallery",
     "file": "PHOTO-1",
-    "alt": "Hajaniaina Rafaliarintsoa sample-gallery",
-    "parentId": "sample-gallery"
+    "alt": "sample-gallery",
+    "imagesFolder": {
+      "optimized": {
+        "path": "images\\sample-gallery\\optimized\\PHOTO-1.webp",
+        "dimensions": {
+          "height": 1000,
+          "width": 1500,
+          "type": "webp"
+        }
+      },
+      "thumbnails": {
+        "path": "images\\sample-gallery\\thumbnails\\PHOTO-1.webp",
+        "dimensions": {
+          "height": 450,
+          "width": 675,
+          "type": "webp"
+        }
+      }
+    }
   },
   {
-    "name": "PHOTO-2",
-    "path": "images/sample-gallery/optimized/PHOTO-2.webp",
-    "thumbnailPath": "images/sample-gallery/thumbnails/PHOTO-2.webp",
-    "thumbnailDimensions": {
-      "height": 450,
-      "width": 675,
-      "type": "webp"
-    },
-    "optimizedDimensions": {
-      "height": 1000,
-      "width": 1500,
-      "type": "webp"
-    },
+    "name": "PHOTO-10",
+    "path": "",
     "portrait": false,
     "galleryId": "sample-gallery",
-    "file": "PHOTO-2",
-    "alt": "Hajaniaina Rafaliarintsoa sample-gallery",
-    "parentId": "sample-gallery"
+    "parentId": "sample-gallery",
+    "file": "PHOTO-10",
+    "alt": "sample-gallery",
+    "imagesFolder": {
+      "optimized": {
+        "path": "images\\sample-gallery\\optimized\\PHOTO-10.webp",
+        "dimensions": {
+          "height": 1000,
+          "width": 1500,
+          "type": "webp"
+        }
+      },
+      "thumbnails": {
+        "path": "images\\sample-gallery\\thumbnails\\PHOTO-10.webp",
+        "dimensions": {
+          "height": 450,
+          "width": 675,
+          "type": "webp"
+        }
+      }
+    }
   },
   ...
 ]
@@ -126,9 +147,6 @@ interface Options {
   imagesAssetsDir: string;
   parentGalleries: string[];
   privateGalleries: string[];
-  watermarkPath?: string;
-  thumbnailSize?: ImageDimensions;
-  optimizedSize?: ImageDimensions;
   renameFiles: boolean;
   renameOptions: {
     charsToRename: string[];
@@ -136,6 +154,7 @@ interface Options {
   };
   cleanChars?: (string | { char: string; replaceBy: string })[];
   copyright?: string;
+  foldersConfig: FolderConfig[];
 }
 ```
 

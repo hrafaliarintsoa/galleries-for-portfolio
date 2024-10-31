@@ -3,15 +3,18 @@ import sizeOf from 'image-size';
 import sharp from 'sharp';
 import { promises as fs, existsSync } from 'node:fs';
 
+export type FolderConfig = {
+  name: string;
+  dimensions: ImageDimensions;
+  watermarkPath?: string;
+};
+
 export interface Options {
   galleries: string[];
   imagesDir: string;
   imagesAssetsDir: string;
   parentGalleries: string[];
   privateGalleries: string[];
-  watermarkPath?: string;
-  thumbnailSize?: ImageDimensions;
-  optimizedSize?: ImageDimensions;
   renameFiles: boolean;
   renameOptions: {
     charsToRename: string[];
@@ -19,19 +22,25 @@ export interface Options {
   };
   cleanChars?: (string | { char: string; replaceBy: string })[];
   copyright?: string;
+  foldersConfig: FolderConfig[];
 }
 
-export interface ImageObject {
+export type ImagesFolder<T extends FolderConfig> = {
+  [K in T['name']]: {
+    path: string;
+    dimensions: ImageDimensions;
+  };
+};
+
+export interface ImageObject<T extends FolderConfig> {
   name: string;
   path: string;
-  thumbnailPath: string;
-  thumbnailDimensions: ImageDimensions;
-  optimizedDimensions: ImageDimensions;
   portrait: boolean;
   galleryId: string;
+  parentId: string;
   file: string;
   alt: string;
-  parentId: string;
+  imagesFolder: ImagesFolder<T>;
 }
 
 export type ImageDimensions = {
@@ -54,32 +63,27 @@ export async function createGalleries(options: Options) {
 
         const newFiles = await fs.readdir(imagesDir);
 
-        await createOptimizedDir(dest);
-        await createThumbnailsDir(dest);
-        await deleteAllFilesInFolder(path.join(dest, '/optimized'));
-        await deleteAllFilesInFolder(path.join(dest, '/thumbnails'));
-
         await Promise.all(
-          newFiles.map(async (file) => {
-            if (isImage(file)) {
-              const fileToOptimize = path.join(imagesDir, file);
-              const optThumbFileName = renameFilesForOptimizedAndThumbnails(file, options);
-              const fileDest = path.join(
-                imagesDir + '/optimized',
-                getWebpName(optThumbFileName as string),
-              );
-              const thumbnailDest = path.join(
-                imagesDir + '/thumbnails',
-                getWebpName(optThumbFileName as string),
-              );
-              await createOptimizedFile(fileToOptimize, fileDest, options);
-              await createThumbnailFile(fileToOptimize, thumbnailDest, options);
-            }
+          options.foldersConfig.map(async (folderConfig) => {
+            const folderDest = path.join(dest, folderConfig.name);
+            await createDir(folderDest);
+            await deleteAllFilesInFolder(folderDest);
+
+            await Promise.all(
+              newFiles.map(async (file) => {
+                if (isImage(file)) {
+                  const fileToProcess = path.join(imagesDir, file);
+                  const processedFileName = renameFilesForFolders(file, options);
+                  const fileDest = path.join(folderDest, getWebpName(processedFileName as string));
+                  await createImageFile(fileToProcess, fileDest, folderConfig, options);
+                }
+              }),
+            );
           }),
         );
 
         const imageObjects = await createImageObjects(
-          renameFilesForOptimizedAndThumbnails(newFiles, options),
+          renameFilesForFolders(newFiles, options),
           imagesDir,
           gallery,
           options,
@@ -96,7 +100,73 @@ export async function createGalleries(options: Options) {
   }
 }
 
-function renameFilesForOptimizedAndThumbnails(
+async function createImageFile(file: string, dest: string, config: { dimensions: ImageDimensions; watermarkPath?: string }, options: Options) {
+  console.log(`Creating image file for ${file}`);
+  console.log(`Destination: ${dest}`);
+  const position = { gravity: 'southeast' };
+  const { width, height } = await getImageSize(file);
+  let isPortrait = false;
+  if (width && height) {
+    isPortrait = height > width;
+  }
+  const [newWidth, newHeight] = isPortrait
+    ? [config.dimensions.height, config.dimensions.width]
+    : [config.dimensions.width, config.dimensions.height];
+  try {
+    const sharpInstance = sharp(file)
+      .withMetadata({
+        exif: {
+          IFD0: {
+            Copyright: options.copyright || new Date().getFullYear().toString(),
+          },
+        },
+      })
+      .resize(newWidth, newHeight, {
+        fit: sharp.fit.cover,
+        kernel: sharp.kernel.lanczos3,
+      });
+
+    if (config.watermarkPath) {
+      sharpInstance.composite([
+        {
+          input: config.watermarkPath,
+          ...position,
+        },
+      ]);
+    }
+
+    await sharpInstance.toFile(dest);
+  } catch (err) {
+    console.error(`Failed to create image file for ${file}: ${err}`);
+  }
+}
+
+async function deleteAllFilesInFolder(directoryPath: string) {
+  console.log(`Deleting all files in ${directoryPath}`);
+
+  const files = await fs.readdir(directoryPath);
+  await Promise.all(
+    files.map(async (file) => {
+      const filePath = path.join(directoryPath, file);
+      await fs.unlink(filePath);
+    }),
+  );
+}
+
+async function createDir(dest: string) {
+  console.log(`Creating directory in ${dest}`);
+
+  try {
+    await fs.mkdir(dest, { recursive: true });
+  } catch (err: any) {
+    if (err.code !== 'EEXIST') {
+      console.error(`Failed to create directory ${dest}: ${err}`);
+      throw err;
+    }
+  }
+}
+
+function renameFilesForFolders(
   files: string | string[],
   options: Options,
 ): string | string[] {
@@ -145,40 +215,43 @@ async function getImageSize(path: string): Promise<ImageDimensions> {
 async function createImageObjects(files: any, dir: string, galleryId: string, options: Options) {
   console.log(`Creating image objects for ${galleryId}`);
 
-  const imageObjects: ImageObject[] = [];
+  const imageObjects: ImageObject<FolderConfig>[] = [];
   for (const file of files) {
     if (isImage(file)) {
-      const imageThumbnailPath = path.join(dir, 'thumbnails', file);
-      const imageOptimizedPath = path.join(dir, 'optimized', file);
       const imageAlt = getAltText({}, galleryId);
-      const optimizedDimensions = await getImageSize(imageOptimizedPath.replace('.jpg', '.webp'));
-      const thumbnailDimensions = await getImageSize(imageThumbnailPath.replace('.jpg', '.webp'));
       let isPortrait = false;
-      if (thumbnailDimensions.width && thumbnailDimensions.height) {
-        isPortrait = thumbnailDimensions.height > thumbnailDimensions.width;
+      const imagesFolder: ImagesFolder<FolderConfig> = {} as ImagesFolder<FolderConfig>;
+
+      for (const folderConfig of options.foldersConfig) {
+        const folderPath = path.join(dir, folderConfig.name, file);
+        const dimensions = await getImageSize(folderPath.replace('.jpg', '.webp'));
+        if (dimensions.width && dimensions.height) {
+          isPortrait = dimensions.height > dimensions.width;
+        }
+        imagesFolder[folderConfig.name] = {
+          path: path.join(options.imagesAssetsDir, galleryId, folderConfig.name, getWebpName(file)),
+          dimensions: dimensions,
+        };
       }
+
       const refGalleryId = (
         !galleryId.includes('home-')
           ? galleryId
           : getGalleryIdFromFileName(file, galleryId, options)
       ) as string;
-      imageObjects.push({
+
+      const imageObject: ImageObject<FolderConfig> = {
         name: file.replace('.jpg', ''),
-        path: path.join(options.imagesAssetsDir, galleryId, 'optimized', getWebpName(file)),
-        thumbnailPath: path.join(
-          options.imagesAssetsDir,
-          galleryId,
-          'thumbnails',
-          getWebpName(file),
-        ),
-        thumbnailDimensions: thumbnailDimensions,
-        optimizedDimensions: optimizedDimensions,
+        path: '',
         portrait: isPortrait,
         galleryId: refGalleryId,
+        parentId: galleryId,
         file: file.replace('.jpg', ''),
         alt: imageAlt,
-        parentId: galleryId,
-      });
+        imagesFolder: imagesFolder,
+      };
+
+      imageObjects.push(imageObject);
     }
   }
   return imageObjects;
@@ -189,17 +262,18 @@ function getGalleryIdFromFileName(
   fileFolder: string,
   options: Options,
 ): string | null {
-  const imagePaths = options.galleries
-    .map((gallery) =>
-      path.join(options.imagesDir, gallery, 'optimized', fileName.replace('.jpg', '.webp')),
+  const imagePaths = options.galleries.flatMap((gallery) =>
+    options.foldersConfig.map((folderConfig) =>
+      path.join(options.imagesDir, gallery, folderConfig.name, fileName.replace('.jpg', '.webp'))
     )
-    .filter((imagePath) => !imagePath.includes(fileFolder));
+  ).filter((imagePath) => !imagePath.includes(fileFolder));
+
   const existingImagePath = imagePaths.find((imagePath) => existsSync(imagePath));
 
   if (existingImagePath) {
     const normalizedExistingImagePath = path.normalize(existingImagePath);
     const galleryId = options.galleries.find((gallery) =>
-      normalizedExistingImagePath.includes(path.normalize(gallery)),
+      normalizedExistingImagePath.includes(path.normalize(gallery))
     );
     return galleryId || null;
   }
@@ -207,111 +281,11 @@ function getGalleryIdFromFileName(
 }
 
 function getAltText(exif: { DigitalCreationDate?: any }, galleryId: any) {
-  let alt = `Hajaniaina Rafaliarintsoa ${galleryId}`;
+  let alt = `${galleryId}`;
   if (exif.DigitalCreationDate) {
     alt += ` ${exif.DigitalCreationDate}`;
   }
   return alt;
-}
-
-async function createOptimizedFile(file: string, dest: string, options: Options) {
-  console.log(`Reducing image size of ${file}`);
-  console.log(`Destination: ${dest}`);
-  const position = { gravity: 'southeast' };
-  const { width, height } = await getImageSize(file);
-  let isPortrait = false;
-  if (width && height) {
-    isPortrait = height > width;
-  }
-  const [newWidth, newHeight] = isPortrait
-    ? [options.optimizedSize?.height, options.optimizedSize?.width]
-    : [options.optimizedSize?.width, options.optimizedSize?.height];
-  try {
-    const sharpInstance = sharp(file)
-      .withMetadata({
-        exif: {
-          IFD0: {
-            Copyright: options.copyright || new Date().getFullYear().toString(),
-          },
-        },
-      })
-      .resize(newWidth, newHeight, {
-        fit: sharp.fit.cover,
-        kernel: sharp.kernel.lanczos3,
-      });
-
-    if (!dest.includes('home-') && options.watermarkPath) {
-      sharpInstance.composite([
-        {
-          input: options.watermarkPath,
-          ...position,
-        },
-      ]);
-    }
-
-    await sharpInstance.toFile(dest);
-  } catch (err) {
-    console.error(`Failed to reduce image size of ${file}: ${err}`);
-  }
-}
-
-async function deleteAllFilesInFolder(directoryPath: string) {
-  console.log(`Deleting all files in ${directoryPath}`);
-
-  const files = await fs.readdir(directoryPath);
-  await Promise.all(
-    files.map(async (file) => {
-      const filePath = path.join(directoryPath, file);
-      await fs.unlink(filePath);
-    }),
-  );
-}
-
-async function createOptimizedDir(dest: string) {
-  console.log(`Creating optimized directory in ${dest}`);
-
-  try {
-    await fs.mkdir(path.join(dest, 'optimized'), { recursive: true });
-  } catch (err: any) {
-    if (err.code !== 'EEXIST') {
-      console.error(`Failed to create directory ${dest}: ${err}`);
-      throw err;
-    }
-  }
-}
-
-async function createThumbnailsDir(dest: string) {
-  console.log(`Creating thumbnails directory in ${dest}`);
-
-  try {
-    await fs.mkdir(path.join(dest, 'thumbnails'), { recursive: true });
-  } catch (err: any) {
-    if (err.code !== 'EEXIST') {
-      console.error(`Failed to create directory ${dest}: ${err}`);
-      throw err;
-    }
-  }
-}
-
-async function createThumbnailFile(imagePath: string, thumbnailPath: string, options: Options) {
-  console.log(`Creating thumbnail for ${imagePath}`);
-  const { width, height } = await getImageSize(imagePath);
-  let isPortrait = false;
-  if (width && height) {
-    isPortrait = height > width;
-  }
-  const [newWidth, newHeight] = isPortrait
-    ? [null, options.thumbnailSize?.height]
-    : [options.thumbnailSize?.width, null];
-  return sharp(imagePath)
-    .resize(newWidth, newHeight, {
-      kernel: sharp.kernel.lanczos3,
-      fit: sharp.fit.cover,
-    })
-    .webp({
-      quality: 100,
-    })
-    .toFile(thumbnailPath);
 }
 
 async function renameFiles(files: any[], gallery: string, options: Options) {
