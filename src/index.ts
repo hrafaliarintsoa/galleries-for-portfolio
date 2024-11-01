@@ -4,34 +4,41 @@ import sharp from 'sharp';
 import { promises as fs, existsSync } from 'node:fs';
 
 export type FolderConfig = {
-  name: string;
-  dimensions: ImageDimensions;
-  watermarkPath?: string;
+  folderName: string;
+  imageDimensions: ImageDimensions;
+  watermarkImagePath?: string;
 };
 
 export interface Options {
-  galleries: string[];
-  imagesDir: string;
-  imagesAssetsDir: string;
-  parentGalleries: string[];
-  privateGalleries: string[];
-  renameFiles: boolean;
-  renameOptions: {
+  galleryNames: string[];
+  sourceImagesDir: string;
+  outputImagesDir: string;
+  parentGalleryNames: string[];
+  privateGalleryNames: string[];
+  shouldRenameFiles: boolean;
+  fileRenameOptions: {
     charsToRename: string[];
     renameBy: string;
   };
-  cleanChars?: (string | { char: string; replaceBy: string })[];
+  charactersToClean?: (string | { char: string; replaceBy: string })[];
   copyright?: string;
-  foldersConfig: FolderConfig[];
-  noWatermark?: string[];
-  needReferenceId?: string[];
+  imageProcessingConfigs: FolderConfig[];
+  noWatermarkFolders?: string[];
+  referenceIdRequiredGalleries?: string[];
 }
 
-export type ImagesFolder<T extends FolderConfig> = {
-  [K in Exclude<keyof T, 'name'>]: {
-    path: string;
-    dimensions: ImageDimensions;
+export type ImagesFolder<FolderConfig> = {
+  [Key in Exclude<keyof FolderConfig, 'folderName'>]: {
+    imagePath: string;
+    imageDimensions: ImageDimensions;
   };
+};
+
+export type ImageDimensions = {
+  width: number | undefined;
+  height: number | undefined;
+  orientation?: number;
+  type?: string;
 };
 
 export interface ImageObject extends ImagesFolder<FolderConfig> {
@@ -44,19 +51,12 @@ export interface ImageObject extends ImagesFolder<FolderConfig> {
   alt: string;
 }
 
-export type ImageDimensions = {
-  width: number | undefined;
-  height: number | undefined;
-  orientation?: number;
-  type?: string;
-};
-
 export async function createGalleries(options: Options) {
   showLog('Optimizing images....');
   try {
     await Promise.all(
-      options.galleries.map(async (gallery) => {
-        const imagesDir = path.join(options.imagesDir, gallery);
+      options.galleryNames.map(async (gallery) => {
+        const imagesDir = path.join(options.sourceImagesDir, gallery);
         const files = await fs.readdir(imagesDir);
         const dest = path.join(imagesDir + '');
 
@@ -65,8 +65,8 @@ export async function createGalleries(options: Options) {
         const newFiles = await fs.readdir(imagesDir);
 
         await Promise.all(
-          options.foldersConfig.map(async (folderConfig) => {
-            const folderDest = path.join(dest, folderConfig.name);
+          options.imageProcessingConfigs.map(async (imageProcessingConfig) => {
+            const folderDest = path.join(dest, imageProcessingConfig.folderName);
             await createDir(folderDest);
             await deleteAllFilesInFolder(folderDest);
 
@@ -76,7 +76,7 @@ export async function createGalleries(options: Options) {
                   const fileToProcess = path.join(imagesDir, file);
                   const processedFileName = renameFilesForFolders(file, options);
                   const fileDest = path.join(folderDest, getWebpName(processedFileName as string));
-                  await createImageFile(fileToProcess, fileDest, folderConfig, options);
+                  await createImageFile(fileToProcess, fileDest, imageProcessingConfig, options);
                 }
               }),
             );
@@ -101,7 +101,7 @@ export async function createGalleries(options: Options) {
   }
 }
 
-async function createImageFile(file: string, dest: string, config: { dimensions: ImageDimensions; watermarkPath?: string }, options: Options) {
+async function createImageFile(file: string, dest: string, config: FolderConfig, options: Options) {
   showLog(`Creating image file for ${file}`);
   showLog(`Destination: ${dest}`);
   const position = { gravity: 'southeast' };
@@ -111,8 +111,8 @@ async function createImageFile(file: string, dest: string, config: { dimensions:
     isPortrait = height > width;
   }
   const [newWidth, newHeight] = isPortrait
-    ? [config.dimensions.height, config.dimensions.width]
-    : [config.dimensions.width, config.dimensions.height];
+    ? [config.imageDimensions.height, config.imageDimensions.width]
+    : [config.imageDimensions.width, config.imageDimensions.height];
   try {
     const sharpInstance = sharp(file)
       .withMetadata({
@@ -127,10 +127,10 @@ async function createImageFile(file: string, dest: string, config: { dimensions:
         kernel: sharp.kernel.lanczos3,
       });
 
-    if (config.watermarkPath && options.noWatermark?.find((n) => !dest.includes(n))) {
+    if (config.watermarkImagePath && options.noWatermarkFolders?.find((n) => !dest.includes(n))) {
       sharpInstance.composite([
         {
-          input: config.watermarkPath,
+          input: config.watermarkImagePath,
           ...position,
         },
       ]);
@@ -177,8 +177,8 @@ function renameFilesForFolders(
         return file;
       }
       let name = file;
-      options.renameOptions.charsToRename.forEach((char) => {
-        name = name.replace(char, options.renameOptions.renameBy);
+      options.fileRenameOptions.charsToRename.forEach((char) => {
+        name = name.replace(char, options.fileRenameOptions.renameBy);
       });
       return name;
     });
@@ -187,8 +187,8 @@ function renameFilesForFolders(
     return files;
   }
   let name = files as string;
-  options.renameOptions.charsToRename.forEach((char) => {
-    name = name.replace(char, options.renameOptions.renameBy);
+  options.fileRenameOptions.charsToRename.forEach((char) => {
+    name = name.replace(char, options.fileRenameOptions.renameBy);
   });
   return name;
 }
@@ -224,20 +224,20 @@ async function createImageObjects(files: any, dir: string, galleryId: string, op
       // const imagesFolder: ImagesFolder<FolderConfig> = {} as ImagesFolder<FolderConfig>;
       const folders: any = {} as any;
 
-      for (const folderConfig of options.foldersConfig) {
-        const folderPath = path.join(dir, folderConfig.name, file);
+      for (const imageProcessingConfig of options.imageProcessingConfigs) {
+        const folderPath = path.join(dir, imageProcessingConfig.folderName, file);
         const dimensions = await getImageSize(folderPath.replace('.jpg', '.webp'));
         if (dimensions.width && dimensions.height) {
           isPortrait = dimensions.height > dimensions.width;
         }
-        folders[folderConfig.name] = ({
-          path: path.join(options.imagesAssetsDir, galleryId, folderConfig.name, getWebpName(file)),
+        folders[imageProcessingConfig.folderName] = ({
+          path: path.join(options.outputImagesDir, galleryId, imageProcessingConfig.folderName, getWebpName(file)),
           dimensions: dimensions,
         });
       }
 
       const refGalleryId = (
-        options.needReferenceId?.includes(galleryId)
+        options.referenceIdRequiredGalleries?.includes(galleryId)
           ? getGalleryIdFromFileName(file, galleryId, options)
           : galleryId
       ) as string;
@@ -264,9 +264,9 @@ function getGalleryIdFromFileName(
   fileFolder: string,
   options: Options,
 ): string | null {
-  const imagePaths = options.galleries.flatMap((gallery) =>
-    options.foldersConfig.map((folderConfig) =>
-      path.join(options.imagesDir, gallery, folderConfig.name, fileName.replace('.jpg', '.webp'))
+  const imagePaths = options.galleryNames.flatMap((galleryName) =>
+    options.imageProcessingConfigs.map((imageProcessingConfig) =>
+      path.join(options.sourceImagesDir, galleryName, imageProcessingConfig.folderName, fileName.replace('.jpg', '.webp'))
     )
   ).filter((imagePath) => !imagePath.includes(fileFolder));
 
@@ -274,8 +274,8 @@ function getGalleryIdFromFileName(
 
   if (existingImagePath) {
     const normalizedExistingImagePath = path.normalize(existingImagePath);
-    const galleryId = options.galleries.find((gallery) =>
-      normalizedExistingImagePath.includes(path.normalize(gallery))
+    const galleryId = options.galleryNames.find((galleryName) =>
+      normalizedExistingImagePath.includes(path.normalize(galleryName))
     );
     return galleryId || null;
   }
@@ -294,9 +294,9 @@ async function renameFiles(files: any[], gallery: string, options: Options) {
   showLog(`Renaming files in ${gallery}`);
 
   const promises = files.map(async (file: string) => {
-    const oldPath = path.join(options.imagesDir, gallery, file);
+    const oldPath = path.join(options.sourceImagesDir, gallery, file);
     let newName = file;
-    options.cleanChars?.forEach((char) => {
+    options.charactersToClean?.forEach((char) => {
       if (typeof char === 'string') {
         newName = newName.replace(char, '');
       } else {
@@ -304,10 +304,10 @@ async function renameFiles(files: any[], gallery: string, options: Options) {
       }
     });
 
-    let newPath = path.join(options.imagesDir, gallery, newName);
+    let newPath = path.join(options.sourceImagesDir, gallery, newName);
     if (newName !== file && existsSync(newPath)) {
       newName = newName.replace('.jpg', '2.jpg');
-      newPath = path.join(options.imagesDir, gallery, newName);
+      newPath = path.join(options.sourceImagesDir, gallery, newName);
       await fs.rename(oldPath, newPath);
     } else {
       await fs.rename(oldPath, newPath);
@@ -318,34 +318,34 @@ async function renameFiles(files: any[], gallery: string, options: Options) {
 
 async function setGalleriesImageCover(options: Options) {
   await Promise.all(
-    options.parentGalleries.map(async (gallery) => {
-      const galleriesChild = options.galleries.filter((galleryItem) =>
-        galleryItem.includes(gallery),
+    options.parentGalleryNames.map(async (parentGalleryName) => {
+      const galleriesChild = options.galleryNames.filter((galleryName) =>
+        galleryName.includes(parentGalleryName),
       );
 
-      const images = await galleriesChild.reduce(async (previousPromise, gallery) => {
+      const galleryImages = await galleriesChild.reduce(async (previousPromise, galleryChild) => {
         const acc = await previousPromise;
-        const imagesDir = path.join(options.imagesDir, gallery);
+        const imagesDir = path.join(options.sourceImagesDir, galleryChild);
         const imagesJson = JSON.parse(
           await fs.readFile(path.join(imagesDir, 'images.json'), 'utf8'),
         );
-        if (options.privateGalleries.includes(gallery)) {
+        if (options.privateGalleryNames.includes(galleryChild)) {
           imagesJson.forEach((image: { thumbnailPath: any; path: any }) => {
             delete image.thumbnailPath;
             delete image.path;
           });
         }
 
-        return { ...acc, [gallery]: imagesJson };
+        return { ...acc, [galleryChild]: imagesJson };
       }, Promise.resolve({} as Record<string, any[]>));
 
-      const coverImages = Object.keys(images).reduce((acc, gallery) => {
-        const coverImage = images[gallery].find((image: { portrait: any }) => !image.portrait);
-        return { ...acc, [gallery]: coverImage };
+      const coverImages = Object.keys(galleryImages).reduce((acc, galleryName) => {
+        const coverImage = galleryImages[galleryName].find((image: { portrait: any }) => !image.portrait);
+        return { ...acc, [galleryName]: coverImage };
       }, {});
 
       await fs.writeFile(
-        path.join(options.imagesDir, gallery, 'cover-images.json'),
+        path.join(options.sourceImagesDir, parentGalleryName, 'cover-images.json'),
         JSON.stringify(coverImages, null, 2),
       );
     }),

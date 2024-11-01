@@ -11,27 +11,27 @@ const modifiedGalleries = galleries.filter((gallery) =>
 const galleriesToProcess = modifiedGalleries.length > 0 ? modifiedGalleries : galleries;
 
 createGalleries({
-  galleries: galleriesToProcess,
-  imagesDir: 'example/images',
-  imagesAssetsDir: 'images',
-  parentGalleries: ['with-sub-folder'],
-  privateGalleries: [],
-  foldersConfig: [
+  galleryNames: galleriesToProcess,
+  sourceImagesDir: 'example/images',
+  outputImagesDir: 'images',
+  parentGalleryNames: ['with-sub-folder'],
+  privateGalleryNames: [],
+  imageProcessingConfigs: [
     {
-      name: 'optimized',
-      dimensions: { width: 1500, height: 1000 },
+      folderName: 'optimized',
+      imageDimensions: { width: 1500, height: 1000 },
     },
     {
-      name: 'thumbnails',
-      dimensions: { width: 675, height: 450 },
+      folderName: 'thumbnails',
+      imageDimensions: { width: 675, height: 450 },
     },
   ],
-  renameFiles: true,
-  renameOptions: {
+  shouldRenameFiles: true,
+  fileRenameOptions: {
     charsToRename: ['image'],
     renameBy: 'PHOTO',
   },
-  cleanChars: [],
+  charactersToClean: [],
   copyright: '2024',
-  noWatermark: ['with-sub-folder'],
+  noWatermarkFolders: ['with-sub-folder'],
 });
