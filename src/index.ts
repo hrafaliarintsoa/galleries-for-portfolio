@@ -101,7 +101,7 @@ export async function createGalleries(options: Options) {
   }
 }
 
-async function createImageFile(galleryName: string, file: string, dest: string, config: FolderConfig, options: Options) {
+export async function createImageFile(galleryName: string, file: string, dest: string, config: FolderConfig, options: Options) {
   showLog(`Creating image file for ${file}`);
   showLog(`Destination: ${dest}`);
   const position = { gravity: 'southeast' };
@@ -142,7 +142,7 @@ async function createImageFile(galleryName: string, file: string, dest: string, 
   }
 }
 
-async function deleteAllFilesInFolder(directoryPath: string) {
+export async function deleteAllFilesInFolder(directoryPath: string) {
   showLog(`Deleting all files in ${directoryPath}`);
 
   const files = await fs.readdir(directoryPath);
@@ -154,7 +154,7 @@ async function deleteAllFilesInFolder(directoryPath: string) {
   );
 }
 
-async function createDir(dest: string) {
+export async function createDir(dest: string) {
   showLog(`Creating directory in ${dest}`);
 
   try {
@@ -167,7 +167,7 @@ async function createDir(dest: string) {
   }
 }
 
-function renameFilesForFolders(
+export function renameFilesForFolders(
   files: string | string[],
   options: Options,
 ): string | string[] {
@@ -193,16 +193,16 @@ function renameFilesForFolders(
   return name;
 }
 
-function isImage(file: string) {
+export function isImage(file: string) {
   const ext = path.extname(file);
   return ext === '.jpg' || ext === '.jpeg' || ext === '.png';
 }
 
-function getWebpName(file: string) {
+export function getWebpName(file: string) {
   return file.replace(path.extname(file), '.webp');
 }
 
-async function getImageSize(path: string): Promise<ImageDimensions> {
+export async function getImageSize(path: string): Promise<ImageDimensions> {
   showLog(`Getting image size for ${path}`);
 
   return new Promise((resolve, reject) => {
@@ -213,7 +213,7 @@ async function getImageSize(path: string): Promise<ImageDimensions> {
   });
 }
 
-async function createImageObjects(files: any, dir: string, galleryId: string, options: Options) {
+export async function createImageObjects(files: any, dir: string, galleryId: string, options: Options) {
   showLog(`Creating image objects for ${galleryId}`);
 
   const imageObjects: ImageObject[] = [];
@@ -259,16 +259,16 @@ async function createImageObjects(files: any, dir: string, galleryId: string, op
   return imageObjects;
 }
 
-function getGalleryIdFromFileName(
+export function getGalleryIdFromFileName(
   fileName: string,
-  fileFolder: string,
+  gallery: string,
   options: Options,
 ): string | null {
   const imagePaths = options.galleryNames.flatMap((galleryName) =>
     options.imageProcessingConfigs.map((imageProcessingConfig) =>
       path.join(options.sourceImagesDir, galleryName, imageProcessingConfig.folderName, fileName.replace('.jpg', '.webp'))
     )
-  ).filter((imagePath) => !imagePath.includes(fileFolder));
+  ).filter((imagePath) => !imagePath.includes(gallery));
 
   const existingImagePath = imagePaths.find((imagePath) => existsSync(imagePath));
 
@@ -282,7 +282,7 @@ function getGalleryIdFromFileName(
   return null;
 }
 
-function getAltText(exif: { DigitalCreationDate?: any }, galleryId: any) {
+export function getAltText(exif: { DigitalCreationDate?: any }, galleryId: any) {
   let alt = `${galleryId}`;
   if (exif.DigitalCreationDate) {
     alt += ` ${exif.DigitalCreationDate}`;
@@ -290,7 +290,7 @@ function getAltText(exif: { DigitalCreationDate?: any }, galleryId: any) {
   return alt;
 }
 
-async function renameFiles(files: any[], gallery: string, options: Options) {
+export async function renameFiles(files: any[], gallery: string, options: Options) {
   showLog(`Renaming files in ${gallery}`);
 
   const promises = files.map(async (file: string) => {
@@ -316,7 +316,7 @@ async function renameFiles(files: any[], gallery: string, options: Options) {
   return Promise.all(promises);
 }
 
-async function setGalleriesImageCover(options: Options) {
+export async function setGalleriesImageCover(options: Options) {
   await Promise.all(
     options.parentGalleryNames.map(async (parentGalleryName) => {
       const galleriesChild = options.galleryNames.filter((galleryName) =>
@@ -352,6 +352,6 @@ async function setGalleriesImageCover(options: Options) {
   );
 }
 
-function showLog(...args: any[]) {
+export function showLog(...args: any[]) {
   console.log(...args);
 }
