@@ -1,4 +1,3 @@
-import path from 'path';
 import { createGalleries } from '../src';
 
 const galleries = ['sample-gallery', 'with-sub-folder/sub-gallery'];

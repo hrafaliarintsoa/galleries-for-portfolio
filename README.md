@@ -2,6 +2,13 @@
 
 This library provides a simple way to create and manage galleries for your portfolio.  It supports various image formats and allows for easy customization.
 
+## Features
+
+- Organize images into galleries
+- Handle image optimization
+- Handle private galleries
+- Rename exposed files
+
 ## Installation
 
 ```bash
@@ -9,6 +16,8 @@ npm install @hrafaliarintsoa/galleries-for-portfolio
 ```
 
 ## Usage
+
+See the example in the `example` folder.
 
 ```javascript
 import { createGalleries } from '@hrafaliarintsoa/galleries-for-portfolio';
