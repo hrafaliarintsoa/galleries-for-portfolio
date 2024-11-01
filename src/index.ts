@@ -127,7 +127,7 @@ async function createImageFile(galleryName: string, file: string, dest: string, 
         kernel: sharp.kernel.lanczos3,
       });
 
-    if (config.watermarkImagePath && options.noWatermarkFolders?.includes(galleryName)) {
+    if (config.watermarkImagePath && !options.noWatermarkFolders?.includes(galleryName)) {
       sharpInstance.composite([
         {
           input: config.watermarkImagePath,
