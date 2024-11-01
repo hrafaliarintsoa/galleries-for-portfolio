@@ -3,17 +3,17 @@ import { existsSync, promises as fs } from 'node:fs';
 import path from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import {
-    createDir,
-    createImageObjects,
-    deleteAllFilesInFolder,
-    getAltText,
-    getGalleryIdFromFileName,
-    getImageSize,
-    getWebpName,
-    isImage,
-    renameFiles,
-    renameFilesForFolders,
-    setGalleriesImageCover,
+  createDir,
+  createImageObjects,
+  deleteAllFilesInFolder,
+  getAltText,
+  getGalleryIdFromFileName,
+  getImageSize,
+  getWebpName,
+  isImage,
+  renameFiles,
+  renameFilesForFolders,
+  setGalleriesImageCover,
 } from './index';
 
 vi.mock('sharp');
@@ -114,6 +114,7 @@ describe('getImageSize', () => {
   it('should return the size of the image', async () => {
     const dimensions = { width: 800, height: 600 };
     (sizeOf as any).mockImplementation((path: string, callback: any) => {
+      console.log('path', path);
       callback(null, dimensions);
     });
 
