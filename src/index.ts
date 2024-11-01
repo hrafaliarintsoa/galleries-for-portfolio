@@ -55,12 +55,12 @@ export async function createGalleries(options: Options) {
   showLog('Optimizing images....');
   try {
     await Promise.all(
-      options.galleryNames.map(async (gallery) => {
-        const imagesDir = path.join(options.sourceImagesDir, gallery);
+      options.galleryNames.map(async (galleryName) => {
+        const imagesDir = path.join(options.sourceImagesDir, galleryName);
         const files = await fs.readdir(imagesDir);
         const dest = path.join(imagesDir + '');
 
-        await renameFiles(files, gallery, options);
+        await renameFiles(files, galleryName, options);
 
         const newFiles = await fs.readdir(imagesDir);
 
@@ -76,7 +76,7 @@ export async function createGalleries(options: Options) {
                   const fileToProcess = path.join(imagesDir, file);
                   const processedFileName = renameFilesForFolders(file, options);
                   const fileDest = path.join(folderDest, getWebpName(processedFileName as string));
-                  await createImageFile(fileToProcess, fileDest, imageProcessingConfig, options);
+                  await createImageFile(galleryName, fileToProcess, fileDest, imageProcessingConfig, options);
                 }
               }),
             );
@@ -86,7 +86,7 @@ export async function createGalleries(options: Options) {
         const imageObjects = await createImageObjects(
           renameFilesForFolders(newFiles, options),
           imagesDir,
-          gallery,
+          galleryName,
           options,
         );
         const json = JSON.stringify(imageObjects, null, 2);
@@ -101,7 +101,7 @@ export async function createGalleries(options: Options) {
   }
 }
 
-async function createImageFile(file: string, dest: string, config: FolderConfig, options: Options) {
+async function createImageFile(galleryName: string, file: string, dest: string, config: FolderConfig, options: Options) {
   showLog(`Creating image file for ${file}`);
   showLog(`Destination: ${dest}`);
   const position = { gravity: 'southeast' };
@@ -127,7 +127,7 @@ async function createImageFile(file: string, dest: string, config: FolderConfig,
         kernel: sharp.kernel.lanczos3,
       });
 
-    if (config.watermarkImagePath && options.noWatermarkFolders?.find((n) => !dest.includes(n))) {
+    if (config.watermarkImagePath && options.noWatermarkFolders?.includes(galleryName)) {
       sharpInstance.composite([
         {
           input: config.watermarkImagePath,
