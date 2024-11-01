@@ -143,6 +143,8 @@ describe('createImageObjects', () => {
     vi.spyOn(fs, 'writeFile').mockResolvedValue(undefined);
     vi.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify([]));
     (sizeOf as any).mockImplementation((path: string, callback: any) => {
+      console.log('path', path);
+      
       callback(null, { width: 800, height: 600 });
     });
 
